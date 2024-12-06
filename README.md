@@ -1,54 +1,24 @@
-# GROIW Plugin template for script
+# GROIW Plugin PDF Export
 
-This is a template for creating a GROWI script plugin.
+This is a GROWI plugin to export a page to PDF.
 
 ## Usage
 
-### Download or folk this repository.
-
-```bash
-git clone git@github.com:goofmint/growi-plugin-script-template.git
+```markdown
+::pdf
 ```
 
-### Change the name of the plugin in package.json.
+It shows a button to export the page to PDF.
 
-```js
-{
-  "name": "growi-plugin-script-template",  // Change this name
-  "version": "1.0.0",
-  "description": "GROWI plugin template for script", // Change this description
-	:
-}
-```
+![screenshot](./screenshots/button.jpg)
 
-### Edit those files
+When you click the button in view page, the page is exported as PDF.
 
-Of course, you can add or remove files as you like.
+![screenshot](./screenshots/pdf.png)
 
-- client-entry.tsx
-- src/Hello.tsx
-- src/Hello.css
-- src/Demo.tsx
+## Notice
 
-### Preview the plugin
-
-```bash
-yarn dev
-```
-
-### Build the plugin
-
-```bash
-yarn build
-```
-
-## Publish the plugin at GROWI
-
-Add a topic `growi-plugin` on your GitHub repository.
-
-Then, you can see your plugin on the GROWI plugin list page below.
-
-https://growi.org/plugins
+This plugin doesn't support editing the page.
 
 ## License
 
