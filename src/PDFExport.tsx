@@ -21,7 +21,7 @@ interface GrowiNode extends Node {
     [key: string]: any;
   };
   type: string;
-  attributes?: {[key: string]: string}
+  attributes?: { [key: string]: string };
   children?: GrowiNode[] | {
     tagName?: string, type?: string, value?: string, url?: string, properties?: Properties, children?: GrowiNode[]
   }[];
@@ -31,14 +31,12 @@ interface GrowiNode extends Node {
   addEventListener?: (type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions) => void;
 }
 
-
-// blobファイルを読み込む
+// BlobをData URLに変換
 const readBlobAsDataURL = (blob: Blob) => {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
-      const result = reader.result as string;
-      resolve(result);
+      resolve(reader.result as string);
     };
     reader.onerror = reject;
     reader.readAsDataURL(blob);
@@ -48,66 +46,73 @@ const readBlobAsDataURL = (blob: Blob) => {
 export const pdfExport = (Tag: React.FunctionComponent<any>): React.FunctionComponent<any> => {
   return ({ children, ...props }) => {
     try {
-      if (!props.className.split(' ').includes('pdf-export')) {
+      if (!props.className?.split(' ').includes('pdf-export')) {
         return (<a {...props}>{children}</a>);
       }
-      const onClick = async(e: MouseEvent) => {
+
+      const onClick = async (e: MouseEvent) => {
         e.preventDefault();
         const title = document.title.replace(/ - .*/, '');
         const element = document.querySelector('.wiki');
-        if (!element) {
-          return;
-        }
-        // blob形式に変換
-        const blob = await toBlob(element as any as HTMLElement);
-        if (!blob) {
-          return;
-        }
+        if (!element) return;
+
+        const blob = await toBlob(element as HTMLElement);
+        if (!blob) return;
+
         const dataUrl = await readBlobAsDataURL(blob);
-        // jsPDFのインスタンスを生成
+
         const pdf = new JSPDF({
           orientation: 'p',
           unit: 'px',
           format: 'a4',
           compress: true,
         });
+
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
-        const scale = pdfWidth / element.clientWidth;
+
+        const paddingX = 20;
+        const paddingY = 30;
+        const innerWidth = pdfWidth - paddingX * 2;
+        const innerHeight = pdfHeight - paddingY * 2;
+
+        const scale = innerWidth / element.clientWidth;
         const scaledWidth = element.clientWidth * scale;
         const scaledHeight = element.clientHeight * scale;
+
         const computedStyle = window.getComputedStyle(document.body);
-        const backgroundColor = computedStyle.backgroundColor.match(/rgb\(([0-9]{1,3}), ([0-9]{1,3}), ([0-9]{1,3})\)/);
-        const pages = Math.ceil(scaledHeight / pdfHeight);
+        const bgMatch = computedStyle.backgroundColor.match(/rgb\((\d+), (\d+), (\d+)\)/);
+        const bgColor = bgMatch ? bgMatch.slice(1).map(Number) : [255, 255, 255];
+
+        const pages = Math.ceil(scaledHeight / innerHeight);
+
         for (let i = 0; i < pages; i++) {
-          pdf.setPage(i + 1);
-          pdf.setFillColor(parseInt(backgroundColor![1]), parseInt(backgroundColor![2]), parseInt(backgroundColor![3]));
-          pdf.rect(0, 0, scaledWidth, scaledHeight, 'F');
+          if (i > 0) pdf.addPage();
+
+          pdf.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
+          pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+
           pdf.addImage(
             dataUrl,
             'JPEG',
-            0,
-            -pdfHeight * i,
+            paddingX,
+            paddingY - innerHeight * i,
             scaledWidth,
-            scaledHeight,
+            scaledHeight
           );
-          pdf.addPage();
         }
-        // Remove the last page
-        pdf.deletePage(pdf.getNumberOfPages());
+
         pdf.save(`${title === '/' ? 'Root' : title}.pdf`);
       };
+
       return (
         <a {...props} onClick={onClick}>{children}</a>
       );
+    } catch (err) {
+      console.error('PDF export failed:', err);
     }
-    catch (err) {
-      // console.error(err);
-    }
-    // Return the original component if an error occurs
-    return (
-      <a {...props}>{children}</a>
-    );
+
+    return (<a {...props}>{children}</a>);
   };
 };
 
@@ -117,7 +122,6 @@ export const remarkPlugin: Plugin = () => {
       const n = node as unknown as GrowiNode;
       if (n.name !== 'pdf') return;
       const data = n.data || (n.data = {});
-      // add float button to the right bottom
       data.hChildren = [
         {
           tagName: 'div',
@@ -128,9 +132,7 @@ export const remarkPlugin: Plugin = () => {
               tagName: 'a',
               type: 'element',
               properties: { className: 'material-symbols-outlined me-1 grw-page-control-dropdown-icon pdf-export' },
-              children: [
-                { type: 'text', value: 'cloud_download' },
-              ],
+              children: [{ type: 'text', value: 'cloud_download' }],
             },
           ],
         },
