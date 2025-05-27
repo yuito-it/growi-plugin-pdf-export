@@ -1,9 +1,16 @@
 .pdf-export-float-button {
   position: fixed;
-  top: 50px;
+  bottom: 20px;
   right: 20px;
   z-index: 1000;
+  background: #6200ea;
+  color: white;
+  padding: 10px 12px;
+  border-radius: 50%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
 }
+
 
 .pdf-export {
   padding: 20px;
