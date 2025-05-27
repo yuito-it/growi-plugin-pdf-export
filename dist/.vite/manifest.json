@@ -1,6 +1,6 @@
 {
   "client-entry.tsx": {
-    "file": "assets/client-entry-Ba-z5rTj.js",
+    "file": "assets/client-entry-D6ZYmsBi.js",
     "name": "client-entry",
     "src": "client-entry.tsx",
     "isEntry": true,
@@ -14,7 +14,7 @@
     ]
   },
   "node_modules/canvg/lib/index.es.js": {
-    "file": "assets/index.es-DfdtQuMH.js",
+    "file": "assets/index.es-DvsfZqrL.js",
     "name": "index.es",
     "src": "node_modules/canvg/lib/index.es.js",
     "isDynamicEntry": true,

@@ -1,11 +1,11 @@
-import { h, Properties } from 'hastscript';
-import { toCanvas, toBlob } from 'html-to-image';
-import { jsPDF as JSPDF } from 'jspdf';
-import type { Plugin } from 'unified';
-import { Node } from 'unist';
-import { visit } from 'unist-util-visit';
+import { h, Properties } from "hastscript";
+import { toCanvas, toBlob } from "html-to-image";
+import { jsPDF as JSPDF } from "jspdf";
+import type { Plugin } from "unified";
+import { Node } from "unist";
+import { visit } from "unist-util-visit";
 
-import './PDFExport.css';
+import "./PDFExport.css";
 
 interface GrowiNode extends Node {
   name?: string;
@@ -21,16 +21,26 @@ interface GrowiNode extends Node {
     [key: string]: any;
   };
   type: string;
-  attributes?: {[key: string]: string}
-  children?: GrowiNode[] | {
-    tagName?: string, type?: string, value?: string, url?: string, properties?: Properties, children?: GrowiNode[]
-  }[];
+  attributes?: { [key: string]: string };
+  children?:
+    | GrowiNode[]
+    | {
+        tagName?: string;
+        type?: string;
+        value?: string;
+        url?: string;
+        properties?: Properties;
+        children?: GrowiNode[];
+      }[];
   value?: string;
   title?: string;
   url?: string;
-  addEventListener?: (type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions) => void;
+  addEventListener?: (
+    type: string,
+    listener: EventListenerOrEventListenerObject,
+    options?: boolean | AddEventListenerOptions
+  ) => void;
 }
-
 
 // blobファイルを読み込む
 const readBlobAsDataURL = (blob: Blob) => {
@@ -45,16 +55,18 @@ const readBlobAsDataURL = (blob: Blob) => {
   });
 };
 
-export const pdfExport = (Tag: React.FunctionComponent<any>): React.FunctionComponent<any> => {
+export const pdfExport = (
+  Tag: React.FunctionComponent<any>
+): React.FunctionComponent<any> => {
   return ({ children, ...props }) => {
     try {
-      if (!props.className.split(' ').includes('pdf-export')) {
-        return (<a {...props}>{children}</a>);
+      if (!props.className.split(" ").includes("pdf-export")) {
+        return <a {...props}>{children}</a>;
       }
-      const onClick = async(e: MouseEvent) => {
+      const onClick = async (e: MouseEvent) => {
         e.preventDefault();
-        const title = document.title.replace(/ - .*/, '');
-        const element = document.querySelector('.wiki');
+        const title = document.title.replace(/ - .*/, "");
+        const element = document.querySelector(".wiki");
         if (!element) {
           return;
         }
@@ -66,71 +78,93 @@ export const pdfExport = (Tag: React.FunctionComponent<any>): React.FunctionComp
         const dataUrl = await readBlobAsDataURL(blob);
         // jsPDFのインスタンスを生成
         const pdf = new JSPDF({
-          orientation: 'p',
-          unit: 'px',
-          format: 'a4',
+          orientation: "p",
+          unit: "px",
+          format: "a4",
           compress: true,
         });
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const margin = 40; // 余白を40pxに設定
+        const pdfWidth = pdf.internal.pageSize.getWidth() - margin * 2;
+        const pdfHeight = pdf.internal.pageSize.getHeight() - margin * 2;
         const scale = pdfWidth / element.clientWidth;
         const scaledWidth = element.clientWidth * scale;
         const scaledHeight = element.clientHeight * scale;
         const computedStyle = window.getComputedStyle(document.body);
-        const backgroundColor = computedStyle.backgroundColor.match(/rgb\(([0-9]{1,3}), ([0-9]{1,3}), ([0-9]{1,3})\)/);
+        const backgroundColor = computedStyle.backgroundColor.match(
+          /rgb\(([0-9]{1,3}), ([0-9]{1,3}), ([0-9]{1,3})\)/
+        );
         const pages = Math.ceil(scaledHeight / pdfHeight);
         for (let i = 0; i < pages; i++) {
           pdf.setPage(i + 1);
-          pdf.setFillColor(parseInt(backgroundColor![1]), parseInt(backgroundColor![2]), parseInt(backgroundColor![3]));
-          pdf.rect(0, 0, scaledWidth, scaledHeight, 'F');
+          if (
+            backgroundColor &&
+            backgroundColor[1] &&
+            backgroundColor[2] &&
+            backgroundColor[3]
+          ) {
+            pdf.setFillColor(
+              parseInt(backgroundColor[1]),
+              parseInt(backgroundColor[2]),
+              parseInt(backgroundColor[3])
+            );
+          } else {
+            pdf.setFillColor(255, 255, 255); // デフォルトは白背景
+          }
+          pdf.rect(
+            0,
+            0,
+            pdf.internal.pageSize.getWidth(),
+            pdf.internal.pageSize.getHeight(),
+            "F"
+          );
           pdf.addImage(
             dataUrl,
-            'JPEG',
-            0,
-            -pdfHeight * i,
+            "JPEG",
+            margin,
+            -pdfHeight * i + margin,
             scaledWidth,
-            scaledHeight,
+            scaledHeight
           );
           pdf.addPage();
         }
         // Remove the last page
         pdf.deletePage(pdf.getNumberOfPages());
-        pdf.save(`${title === '/' ? 'Root' : title}.pdf`);
+        pdf.save(`${title === "/" ? "Root" : title}.pdf`);
       };
       return (
-        <a {...props} onClick={onClick}>{children}</a>
+        <a {...props} onClick={onClick}>
+          {children}
+        </a>
       );
-    }
-    catch (err) {
+    } catch (err) {
       // console.error(err);
     }
     // Return the original component if an error occurs
-    return (
-      <a {...props}>{children}</a>
-    );
+    return <a {...props}>{children}</a>;
   };
 };
 
 export const remarkPlugin: Plugin = () => {
   return (tree: Node) => {
-    visit(tree, 'leafDirective', (node: Node) => {
+    visit(tree, "leafDirective", (node: Node) => {
       const n = node as unknown as GrowiNode;
-      if (n.name !== 'pdf') return;
+      if (n.name !== "pdf") return;
       const data = n.data || (n.data = {});
       // add float button to the right bottom
       data.hChildren = [
         {
-          tagName: 'div',
-          type: 'element',
-          properties: { className: 'pdf-export-float-button' },
+          tagName: "div",
+          type: "element",
+          properties: { className: "pdf-export-float-button" },
           children: [
             {
-              tagName: 'a',
-              type: 'element',
-              properties: { className: 'material-symbols-outlined me-1 grw-page-control-dropdown-icon pdf-export' },
-              children: [
-                { type: 'text', value: 'cloud_download' },
-              ],
+              tagName: "a",
+              type: "element",
+              properties: {
+                className:
+                  "material-symbols-outlined me-1 grw-page-control-dropdown-icon pdf-export",
+              },
+              children: [{ type: "text", value: "cloud_download" }],
             },
           ],
         },
