@@ -22,23 +22,24 @@ export const pdfExport = (Tag: React.FunctionComponent<any>): React.FunctionComp
       const element = document.querySelector('.wiki');
       if (!element) return;
 
-      const A4_WIDTH = 595;
-      const A4_HEIGHT = 842;
-      const PADDING = 40;
-      const CONTENT_WIDTH = A4_WIDTH - PADDING * 2;
+      // 📏 A4サイズ（px）と余白
+      const A4_WIDTH = 595.28;
+      const A4_HEIGHT = 841.89;
+      const PADDING = 40; // px
 
-      // スケーリング倍率を計算
-      const scale = CONTENT_WIDTH / element.clientWidth;
+      const originalWidth = element.clientWidth;
+      const originalHeight = element.clientHeight;
 
-      // スクショを blob で取得
+      const scale = (A4_WIDTH - PADDING * 2) / originalWidth;
+      const scaledHeight = originalHeight * scale;
+
+      // 📸 要素をスケーリングしてBlobに変換
       const blob = await toBlob(element as HTMLElement, {
-        width: element.clientWidth,
-        height: element.clientHeight,
         style: {
           transform: `scale(${scale})`,
           transformOrigin: 'top left',
-          width: `${element.clientWidth}px`,
-          height: `${element.clientHeight}px`,
+          width: `${originalWidth}px`,
+          height: `${originalHeight}px`,
         },
       });
 
@@ -46,37 +47,28 @@ export const pdfExport = (Tag: React.FunctionComponent<any>): React.FunctionComp
 
       const dataUrl = await readBlobAsDataURL(blob);
 
-      // Image要素として読み込んでサイズを知る
-      const img = new Image();
-      img.src = dataUrl;
-      await new Promise((resolve) => (img.onload = resolve));
-
-      const scaledImgWidth = CONTENT_WIDTH;
-      const scaledImgHeight = (img.height / img.width) * scaledImgWidth;
-      const PAGE_HEIGHT_AVAILABLE = A4_HEIGHT - PADDING * 2;
-
-      const totalPages = Math.ceil(scaledImgHeight / PAGE_HEIGHT_AVAILABLE);
-
-      // PDFインスタンス作成
       const pdf = new JSPDF({
         orientation: 'p',
-        unit: 'px',
-        format: [A4_WIDTH, A4_HEIGHT],
+        unit: 'pt',
+        format: 'a4',
         compress: true,
       });
+
+      const usableHeight = A4_HEIGHT - PADDING * 2;
+      const totalPages = Math.ceil(scaledHeight / usableHeight);
 
       for (let i = 0; i < totalPages; i++) {
         if (i > 0) pdf.addPage();
 
-        const yOffset = -i * PAGE_HEIGHT_AVAILABLE;
+        const offsetY = -i * usableHeight;
 
         pdf.addImage(
-          img,
+          dataUrl,
           'PNG',
-          PADDING,
-          yOffset + PADDING,
-          scaledImgWidth,
-          scaledImgHeight
+          PADDING, // ⬅ 左から余白
+          offsetY + PADDING, // ⬇ 上から余白込みでずらす
+          A4_WIDTH - PADDING * 2,
+          scaledHeight
         );
       }
 
