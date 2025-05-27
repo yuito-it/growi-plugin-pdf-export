@@ -80,10 +80,7 @@ export const pdfExport = (Tag: React.FunctionComponent<any>): React.FunctionComp
         const scaledWidth = element.clientWidth * scale;
         const scaledHeight = element.clientHeight * scale;
 
-        const computedStyle = window.getComputedStyle(document.body);
-        const bgMatch = computedStyle.backgroundColor.match(/rgb\((\d+), (\d+), (\d+)\)/);
-        const bgColor = bgMatch ? bgMatch.slice(1).map(Number) : [255, 255, 255];
-
+        const xOffset = paddingX + (innerWidth - scaledWidth) / 2;
         const pages = Math.ceil(scaledHeight / innerHeight);
 
         for (let i = 0; i < pages; i++) {
@@ -92,16 +89,17 @@ export const pdfExport = (Tag: React.FunctionComponent<any>): React.FunctionComp
           pdf.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
           pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
 
+          const yOffset = paddingY - innerHeight * i;
+
           pdf.addImage(
             dataUrl,
             'JPEG',
-            paddingX,
-            paddingY - innerHeight * i,
+            xOffset,
+            yOffset,
             scaledWidth,
             scaledHeight
           );
         }
-
         pdf.save(`${title === '/' ? 'Root' : title}.pdf`);
       };
 
